@@ -48,7 +48,6 @@ st.markdown(
 )
 
 
-@st.cache_data
 def load(name: str) -> dict | None:
     return m11.load(name)
 

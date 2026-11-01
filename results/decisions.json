@@ -1,11 +1,11 @@
 {
-  "exported_at": null,
-  "words": 0,
+  "exported_at": "2026-11-01T17:39:56Z",
+  "words": 75,
   "word_limit": 150,
   "sections": {
     "before_results": {
-      "readmission": "",
-      "diabetes": ""
+      "readmission": "The positive class is readmission within 30 days. A missed positive matters more because the patient may not be flagged for added discharge planning or follow-up; a false alarm may use resources for someone who would not be readmitted.",
+      "diabetes": "The positive class is doctor diagnosis or HbA1c at least 6.5%. A missed positive matters more because the person may not be flagged for follow-up testing; a false alarm may lead to an unnecessary follow-up test."
     },
     "recommendations": {
       "readmission": "",
@@ -17,7 +17,7 @@
     }
   },
   "complete": {
-    "before_results": false,
+    "before_results": true,
     "recommendations": false,
     "design": false
   },
