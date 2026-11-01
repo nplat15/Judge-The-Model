@@ -1,0 +1,72 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    html, body { margin: 0; padding: 0; background: transparent; overflow: hidden; }
+    #map { width: 100%; }
+    #map svg { display: block; width: 100%; height: auto; touch-action: none; }
+    #knn-query { cursor: grab; touch-action: none; }
+    #knn-query.dragging { cursor: grabbing; }
+  </style>
+</head>
+<body>
+  <div id="map" aria-label="K nearest neighbours map. Drag the diamond to move the new patient."></div>
+  <script>
+    const map = document.getElementById("map");
+    let currentArgs = {};
+    let activePointer = null;
+    let latestPosition = null;
+
+    function send(type, extra = {}) {
+      window.parent.postMessage({isStreamlitMessage: true, type, ...extra}, "*");
+    }
+    function setValue(value) {
+      send("streamlit:setComponentValue", {value, dataType: "json"});
+    }
+    function render(event) {
+      if (!event.data || event.data.type !== "streamlit:render") return;
+      currentArgs = event.data.args || {};
+      map.innerHTML = currentArgs.svg || "";
+      send("streamlit:setFrameHeight", {height: Number(currentArgs.height) || 640});
+      const diamond = map.querySelector("#knn-query");
+      const svg = map.querySelector("svg");
+      if (!diamond || !svg) return;
+
+      diamond.addEventListener("pointerdown", (pointerEvent) => {
+        activePointer = pointerEvent.pointerId;
+        diamond.classList.add("dragging");
+        diamond.setPointerCapture(activePointer);
+        pointerEvent.preventDefault();
+      });
+      diamond.addEventListener("pointermove", (pointerEvent) => {
+        if (activePointer !== pointerEvent.pointerId) return;
+        const rect = svg.getBoundingClientRect();
+        const vb = svg.viewBox.baseVal;
+        const sx = vb.width / rect.width;
+        const sy = vb.height / rect.height;
+        const vx = (pointerEvent.clientX - rect.left) * sx;
+        const vy = (pointerEvent.clientY - rect.top) * sy;
+        const left = 92, top = 180, plotWidth = 804, plotHeight = 390;
+        const x = Math.max(0, Math.min(200, (vx - left) / plotWidth * 200));
+        const y = Math.max(0, Math.min(2, 2 - (vy - top) / plotHeight * 2));
+        const px = left + x / 200 * plotWidth;
+        const py = top + (2 - y) / 2 * plotHeight;
+        diamond.setAttribute("d", `M ${px} ${py-15} L ${px+15} ${py} L ${px} ${py+15} L ${px-15} ${py} Z`);
+        latestPosition = {x: Number(x.toFixed(1)), y: Number(y.toFixed(2))};
+      });
+      const finishDrag = (pointerEvent) => {
+        if (activePointer !== pointerEvent.pointerId) return;
+        activePointer = null;
+        diamond.classList.remove("dragging");
+        if (latestPosition) setValue(latestPosition);
+      };
+      diamond.addEventListener("pointerup", finishDrag);
+      diamond.addEventListener("pointercancel", finishDrag);
+    }
+    window.addEventListener("message", render);
+    send("streamlit:componentReady", {apiVersion: 1});
+  </script>
+</body>
+</html>
